@@ -128,7 +128,7 @@ export function App() {
             <h1 className="text-xl font-semibold tracking-tight">
               <span className="text-accent">Tool</span>Deck
             </h1>
-            <span className="text-[11px] text-ink-200">v0.2 · universal CLI / agent / dev-tool dashboard</span>
+            <span className="text-[11px] text-ink-200">v0.2.1 · universal CLI / agent / dev-tool dashboard</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-ink-200 ml-auto">
             <Stat label="platform" value={data?.platform ?? '…'} />

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.1 — 2026-05-13
+
+- **One-click launcher** — `Start ToolDeck.cmd` at the project root
+  checks Node / pnpm, runs `pnpm install` on first run, starts the dev
+  server, opens <http://127.0.0.1:4316>. On first run it also writes
+  `Start ToolDeck.lnk` pointing at itself with the new custom icon, so
+  the launcher shows a proper button in Explorer thereafter.
+- **Custom icon** — multi-size `.ico` (16–256 px), shared across the
+  source project, the installer's `Setup.lnk`, the local install-folder
+  shortcut, and the Start Menu shortcut.
+
 ## v0.2.0 — 2026-05-13
 
 - **Command palette (⌘K / Ctrl+K)** with fuzzy search; supports compound

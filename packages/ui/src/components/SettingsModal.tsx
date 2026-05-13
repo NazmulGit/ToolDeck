@@ -87,7 +87,7 @@ export function SettingsModal({ uiSettings, onUISettings, serverSettings, tools,
                   Universal dashboard for viewing and managing the AI / dev /
                   automation tools installed on a PC.
                 </p>
-                <Field label="Version">v0.2.0</Field>
+                <Field label="Version">v0.2.1</Field>
                 <Field label="Server">http://127.0.0.1:4317</Field>
                 <Field label="UI">http://127.0.0.1:4316</Field>
                 <Field label="Shortcuts">
