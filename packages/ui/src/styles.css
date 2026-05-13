@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { -webkit-font-smoothing: antialiased; }
+
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(127, 137, 160, 0.35); border-radius: 4px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* Theme tokens.
+   Dark is default. Use .light on <html> to switch. */
+:root {
+  --bg-0: #0b0d12;
+  --bg-1: #11141b;
+  --bg-2: #171c26;
+  --bg-3: #1f2532;
+  --bg-4: #2a3142;
+  --line: #2a3142;
+  --line-soft: #1f2532;
+  --fg-0: #c4cad7;
+  --fg-1: #8a92a8;
+  --fg-2: #5a637b;
+  --accent: #7c9cff;
+  --good: #5ed5a0;
+  --bad: #ff7676;
+  --warm: #ffb86a;
+}
+
+html.light {
+  --bg-0: #f6f7fb;
+  --bg-1: #ffffff;
+  --bg-2: #f1f3f9;
+  --bg-3: #e5e9f2;
+  --bg-4: #d6dbe8;
+  --line: #d6dbe8;
+  --line-soft: #e5e9f2;
+  --fg-0: #111827;
+  --fg-1: #4b5567;
+  --fg-2: #6b748a;
+  --accent: #3d5cd6;
+  --good: #1f9d63;
+  --bad: #c83b3b;
+  --warm: #c97a1f;
+}
+
+body { background: var(--bg-0); color: var(--fg-0); }
+
+.surface-0 { background: var(--bg-0); }
+.surface-1 { background: var(--bg-1); }
+.surface-2 { background: var(--bg-2); }
+.surface-3 { background: var(--bg-3); }
+
+.divide-line { border-color: var(--line); }
+.text-fg-0 { color: var(--fg-0); }
+.text-fg-1 { color: var(--fg-1); }
+.text-fg-2 { color: var(--fg-2); }
+.bg-bg-0 { background: var(--bg-0); }
+.bg-bg-1 { background: var(--bg-1); }
+.bg-bg-2 { background: var(--bg-2); }
+.bg-bg-3 { background: var(--bg-3); }
+.bg-bg-4 { background: var(--bg-4); }
+.border-line { border-color: var(--line); }
+.border-line-soft { border-color: var(--line-soft); }
+.text-accent { color: var(--accent); }
+.bg-accent { background: var(--accent); }
+.text-good { color: var(--good); }
+.bg-good { background: var(--good); }
+.text-bad { color: var(--bad); }
+.bg-bad { background: var(--bad); }
+.text-warm { color: var(--warm); }
+
+/* Modal */
+.modal-mask {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55);
+  display: grid; place-items: start center; padding-top: 8vh;
+  z-index: 50;
+}
+.modal-panel {
+  background: var(--bg-1); border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  width: min(720px, 90vw);
+}
+
+/* Kbd badge */
+.kbd {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px; padding: 2px 5px; border-radius: 4px;
+  background: var(--bg-3); color: var(--fg-1);
+  border: 1px solid var(--line);
+}
+
+/* Density helpers — used via JS class swap */
+html.density-compact .card-pad { padding: 0.6rem; }
+html.density-compact .card-title { font-size: 0.9rem; }
+html.density-compact .card-desc { display: none; }

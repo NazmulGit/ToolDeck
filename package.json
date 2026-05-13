@@ -1,0 +1,20 @@
+{
+  "name": "tooldeck",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Universal dashboard for viewing and managing installed dev / AI / automation tools and CLIs.",
+  "scripts": {
+    "start": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "ui:dev": "pnpm --filter @tooldeck/ui dev",
+    "ui:build": "pnpm --filter @tooldeck/ui build",
+    "server:dev": "pnpm --filter @tooldeck/server dev",
+    "server:build": "pnpm --filter @tooldeck/server build"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.33.4"
+}
