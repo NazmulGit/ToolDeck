@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.3.1 — 2026-05-13
+
+UX upgrade pass for the list view + dashboard.
+
+- **Sortable columns** in the list view. Click any header to cycle
+  asc → desc → unsorted. Active column shows a chevron in the accent
+  colour. Implements WAI-ARIA `aria-sort` and wraps the label in a
+  `<button>` for keyboard activation (Tab + Space/Enter).
+- **Sort persists** in `localStorage` alongside the rest of UI state.
+- **Sort respected by every view mode** — grid and grouped reorder
+  too. A small `sorted by <key> ▲ / ✕` chip surfaces the current
+  sort outside the list view, with a one-click clear.
+- **Status-aware "status" sort key** orders running > installed >
+  missing.
+- **Sticky list header** stays visible while the body scrolls.
+- **Keyboard navigation**: `↑ / ↓` step through the visible tools and
+  update the detail panel — works in any view mode.
+- **Undefined-last** convention: rows with no version / no metrics
+  always sort to the bottom regardless of direction (expected
+  data-table behaviour).
+
 ## v0.3.0 — 2026-05-13
 
 ### New features

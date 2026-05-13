@@ -8,7 +8,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { ToolCard } from './components/ToolCard';
 import { ToolRow, ToolRowHeader } from './components/ToolRow';
 import { ViewModeToggle } from './components/ViewModeToggle';
-import { useSettings } from './lib/settings';
+import { useSettings, type SortKey } from './lib/settings';
+import { cycleSort, sortTools } from './lib/sort';
 import type { ActionId, ToolKind, ToolView } from './types';
 
 const KIND_ORDER: ToolKind[] = ['ai-cli', 'runtime', 'pkg-manager', 'dev-cli', 'service', 'util', 'app'];
@@ -66,7 +67,7 @@ export function App() {
 
   const filtered = useMemo(() => {
     const q = settings.search.trim().toLowerCase();
-    return tools.filter((t) => {
+    const matched = tools.filter((t) => {
       if (settings.kindFilter !== 'all' && t.kind !== settings.kindFilter) return false;
       if (settings.statusFilter === 'installed' && !t.status.installed) return false;
       if (settings.statusFilter === 'missing' && t.status.installed) return false;
@@ -81,7 +82,13 @@ export function App() {
         (t.tags ?? []).some((tag) => tag.toLowerCase().includes(q))
       );
     });
-  }, [tools, settings.search, settings.kindFilter, settings.statusFilter, settings.showMissing]);
+    return sortTools(matched, settings.sortKey, settings.sortDir);
+  }, [tools, settings.search, settings.kindFilter, settings.statusFilter, settings.showMissing, settings.sortKey, settings.sortDir]);
+
+  const handleSort = useCallback((next: SortKey) => {
+    const r = cycleSort(settings.sortKey, settings.sortDir, next);
+    setSettings(r);
+  }, [settings.sortKey, settings.sortDir, setSettings]);
 
   const counts = useMemo(() => ({
     total: tools.length,
@@ -112,10 +119,23 @@ export function App() {
       if (e.key.toLowerCase() === 'r') { e.preventDefault(); refresh(true); return; }
       if (e.key.toLowerCase() === 'd') { e.preventDefault(); setDoctorOpen(true); return; }
       if (e.key === '?') { e.preventDefault(); setPaletteOpen(true); return; }
+
+      // Arrow navigation through the visible list.
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (filtered.length === 0) return;
+        const idx = filtered.findIndex((t) => t.id === settings.selectedId);
+        const next = e.key === 'ArrowDown'
+          ? Math.min(filtered.length - 1, idx < 0 ? 0 : idx + 1)
+          : Math.max(0, idx < 0 ? 0 : idx - 1);
+        if (filtered[next]) {
+          e.preventDefault();
+          setSettings({ selectedId: filtered[next].id });
+        }
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paletteOpen, settingsOpen, doctorOpen, refresh]);
+  }, [paletteOpen, settingsOpen, doctorOpen, refresh, filtered, settings.selectedId, setSettings]);
 
   const runAction = useCallback(
     async (id: string, action: ActionId) => {
@@ -144,7 +164,7 @@ export function App() {
             <h1 className="text-xl font-semibold tracking-tight">
               <span className="text-accent">Tool</span>Deck
             </h1>
-            <span className="text-[11px] text-ink-200">v0.3 · CLI / agent / dev-tool dashboard</span>
+            <span className="text-[11px] text-ink-200">v0.3.1 · CLI / agent / dev-tool dashboard</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-ink-200 ml-auto">
             <Stat label="installed" value={`${counts.installed}/${counts.total}`} />
@@ -205,11 +225,26 @@ export function App() {
             <div className="text-ink-200 text-sm">Probing tools on this PC…</div>
           )}
 
+          {settings.viewMode !== 'list' && settings.sortDir && (
+            <SortChip
+              sortKey={settings.sortKey}
+              sortDir={settings.sortDir}
+              onClear={() => setSettings({ sortDir: null })}
+            />
+          )}
+
           {settings.viewMode === 'grid' && (
             <GridView tools={filtered} selectedId={settings.selectedId} onSelect={selectTool} />
           )}
           {settings.viewMode === 'list' && (
-            <ListView tools={filtered} selectedId={settings.selectedId} onSelect={selectTool} />
+            <ListView
+              tools={filtered}
+              selectedId={settings.selectedId}
+              onSelect={selectTool}
+              sortKey={settings.sortKey}
+              sortDir={settings.sortDir}
+              onSort={handleSort}
+            />
           )}
           {settings.viewMode === 'group' && (
             <GroupView tools={filtered} selectedId={settings.selectedId} onSelect={selectTool} />
@@ -285,14 +320,32 @@ function GridView({ tools, selectedId, onSelect }: { tools: ToolView[]; selected
   );
 }
 
-function ListView({ tools, selectedId, onSelect }: { tools: ToolView[]; selectedId: string | null; onSelect: (id: string) => void }) {
+function ListView({ tools, selectedId, onSelect, sortKey, sortDir, onSort }: {
+  tools: ToolView[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  sortKey: SortKey;
+  sortDir: 'asc' | 'desc' | null;
+  onSort: (k: SortKey) => void;
+}) {
   if (tools.length === 0) return null;
   return (
-    <div className="rounded-md border border-line bg-ink-800/40 overflow-hidden">
-      <ToolRowHeader />
+    <div role="grid" className="rounded-md border border-line bg-ink-800/40 overflow-hidden">
+      <ToolRowHeader sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
       {tools.map((t) => (
         <ToolRow key={t.id} tool={t} selected={t.id === selectedId} onClick={() => onSelect(t.id)} />
       ))}
+    </div>
+  );
+}
+
+function SortChip({ sortKey, sortDir, onClear }: { sortKey: SortKey; sortDir: 'asc' | 'desc'; onClear: () => void }) {
+  return (
+    <div className="mb-3 inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-md bg-ink-700 border border-ink-400 text-ink-200">
+      <span className="text-ink-300">sorted by</span>
+      <span className="font-medium text-ink-100">{sortKey}</span>
+      <span className="font-mono text-accent">{sortDir === 'asc' ? '▲' : '▼'}</span>
+      <button onClick={onClear} className="text-ink-300 hover:text-bad ml-1" title="Clear sort">✕</button>
     </div>
   );
 }

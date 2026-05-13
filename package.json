@@ -1,6 +1,6 @@
 {
   "name": "tooldeck",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Universal dashboard for viewing and managing installed dev / AI / automation tools and CLIs.",
   "scripts": {
