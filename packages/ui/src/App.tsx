@@ -2,11 +2,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, type ListResp } from './api';
 import { CommandPalette } from './components/CommandPalette';
 import { DetailPanel } from './components/DetailPanel';
+import { DoctorDrawer } from './components/DoctorDrawer';
 import { Filters } from './components/Filters';
 import { SettingsModal } from './components/SettingsModal';
 import { ToolCard } from './components/ToolCard';
+import { ToolRow, ToolRowHeader } from './components/ToolRow';
+import { ViewModeToggle } from './components/ViewModeToggle';
 import { useSettings } from './lib/settings';
 import type { ActionId, ToolKind, ToolView } from './types';
+
+const KIND_ORDER: ToolKind[] = ['ai-cli', 'runtime', 'pkg-manager', 'dev-cli', 'service', 'util', 'app'];
+const KIND_LABEL: Record<ToolKind, string> = {
+  'ai-cli': 'AI / agent CLIs',
+  'runtime': 'Language runtimes',
+  'pkg-manager': 'Package managers',
+  'dev-cli': 'Dev / cloud CLIs',
+  'service': 'Services',
+  'util': 'Utilities',
+  'app': 'Apps',
+};
 
 export function App() {
   const [data, setData] = useState<ListResp | null>(null);
@@ -15,6 +29,7 @@ export function App() {
   const [settings, setSettings] = useSettings();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [doctorOpen, setDoctorOpen] = useState(false);
   const [lastResultMsg, setLastResultMsg] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
@@ -33,14 +48,12 @@ export function App() {
 
   useEffect(() => { refresh(false); }, [refresh]);
 
-  // Auto-refresh polling
   useEffect(() => {
     if (settings.autoRefreshSec <= 0) return;
     const handle = setInterval(() => refresh(true), settings.autoRefreshSec * 1000);
     return () => clearInterval(handle);
   }, [settings.autoRefreshSec, refresh]);
 
-  // Density class on <html>
   useEffect(() => {
     document.documentElement.classList.toggle('density-compact', settings.density === 'compact');
   }, [settings.density]);
@@ -82,7 +95,6 @@ export function App() {
     [settings.selectedId, tools],
   );
 
-  // Keyboard shortcuts: Ctrl/Cmd+K, /, Esc, r, ,
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const meta = e.ctrlKey || e.metaKey;
@@ -93,15 +105,17 @@ export function App() {
       if (e.key === 'Escape') {
         if (paletteOpen) { setPaletteOpen(false); return; }
         if (settingsOpen) { setSettingsOpen(false); return; }
+        if (doctorOpen) { setDoctorOpen(false); return; }
       }
       if (inField) return;
       if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); return; }
       if (e.key.toLowerCase() === 'r') { e.preventDefault(); refresh(true); return; }
+      if (e.key.toLowerCase() === 'd') { e.preventDefault(); setDoctorOpen(true); return; }
       if (e.key === '?') { e.preventDefault(); setPaletteOpen(true); return; }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paletteOpen, settingsOpen, refresh]);
+  }, [paletteOpen, settingsOpen, doctorOpen, refresh]);
 
   const runAction = useCallback(
     async (id: string, action: ActionId) => {
@@ -109,7 +123,7 @@ export function App() {
         setLastResultMsg(`${action} ${id}…`);
         const r = await api.action(id, action);
         setLastResultMsg(`${r.ok ? '✓' : '✕'} ${action} ${id}: ${r.message}`);
-        if (['start', 'stop', 'restart', 'kill', 'update'].includes(action)) {
+        if (['start', 'stop', 'restart', 'kill', 'update', 'uninstall', 'repair'].includes(action)) {
           setTimeout(() => refresh(true), 700);
         }
         return r;
@@ -120,6 +134,8 @@ export function App() {
     [refresh],
   );
 
+  const selectTool = (id: string) => setSettings({ selectedId: id });
+
   return (
     <div className="min-h-screen flex flex-col bg-ink-900 text-ink-100">
       <header className="border-b border-ink-400 bg-ink-800/80 backdrop-blur sticky top-0 z-20">
@@ -128,13 +144,20 @@ export function App() {
             <h1 className="text-xl font-semibold tracking-tight">
               <span className="text-accent">Tool</span>Deck
             </h1>
-            <span className="text-[11px] text-ink-200">v0.2.1 · universal CLI / agent / dev-tool dashboard</span>
+            <span className="text-[11px] text-ink-200">v0.3 · CLI / agent / dev-tool dashboard</span>
           </div>
-          <div className="flex items-center gap-4 text-xs text-ink-200 ml-auto">
-            <Stat label="platform" value={data?.platform ?? '…'} />
+          <div className="flex items-center gap-3 text-xs text-ink-200 ml-auto">
             <Stat label="installed" value={`${counts.installed}/${counts.total}`} />
             <Stat label="running" value={String(counts.running)} good={counts.running > 0} />
             <Stat label="missing" value={String(counts.missing)} />
+            <ViewModeToggle value={settings.viewMode} onChange={(v) => setSettings({ viewMode: v })} />
+            <button
+              onClick={() => setDoctorOpen(true)}
+              className="px-3 py-1.5 rounded-md bg-ink-700 border border-ink-400 text-xs text-ink-100 hover:border-accent"
+              title="Fix system (D)"
+            >
+              Fix system
+            </button>
             <button
               onClick={() => setPaletteOpen(true)}
               className="px-3 py-1.5 rounded-md bg-ink-700 border border-ink-400 text-xs text-ink-100 hover:border-accent flex items-center gap-2"
@@ -181,22 +204,23 @@ export function App() {
           {loading && !data && (
             <div className="text-ink-200 text-sm">Probing tools on this PC…</div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {filtered.map((t) => (
-              <ToolCard
-                key={t.id}
-                tool={t}
-                selected={t.id === settings.selectedId}
-                onClick={() => setSettings({ selectedId: t.id })}
-              />
-            ))}
-            {!loading && filtered.length === 0 && (
-              <EmptyState
-                hasData={tools.length > 0}
-                onClear={() => setSettings({ search: '', kindFilter: 'all', statusFilter: 'all' })}
-              />
-            )}
-          </div>
+
+          {settings.viewMode === 'grid' && (
+            <GridView tools={filtered} selectedId={settings.selectedId} onSelect={selectTool} />
+          )}
+          {settings.viewMode === 'list' && (
+            <ListView tools={filtered} selectedId={settings.selectedId} onSelect={selectTool} />
+          )}
+          {settings.viewMode === 'group' && (
+            <GroupView tools={filtered} selectedId={settings.selectedId} onSelect={selectTool} />
+          )}
+
+          {!loading && filtered.length === 0 && (
+            <EmptyState
+              hasData={tools.length > 0}
+              onClear={() => setSettings({ search: '', kindFilter: 'all', statusFilter: 'all' })}
+            />
+          )}
         </section>
 
         <aside className="border-l border-ink-400 bg-ink-800/40 overflow-auto scroll-thin">
@@ -240,6 +264,67 @@ export function App() {
           onChanged={() => refresh(true)}
         />
       )}
+      {doctorOpen && <DoctorDrawer onClose={() => setDoctorOpen(false)} />}
+    </div>
+  );
+}
+
+function GridView({ tools, selectedId, onSelect }: { tools: ToolView[]; selectedId: string | null; onSelect: (id: string) => void }) {
+  if (tools.length === 0) return null;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      {tools.map((t) => (
+        <ToolCard
+          key={t.id}
+          tool={t}
+          selected={t.id === selectedId}
+          onClick={() => onSelect(t.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ListView({ tools, selectedId, onSelect }: { tools: ToolView[]; selectedId: string | null; onSelect: (id: string) => void }) {
+  if (tools.length === 0) return null;
+  return (
+    <div className="rounded-md border border-line bg-ink-800/40 overflow-hidden">
+      <ToolRowHeader />
+      {tools.map((t) => (
+        <ToolRow key={t.id} tool={t} selected={t.id === selectedId} onClick={() => onSelect(t.id)} />
+      ))}
+    </div>
+  );
+}
+
+function GroupView({ tools, selectedId, onSelect }: { tools: ToolView[]; selectedId: string | null; onSelect: (id: string) => void }) {
+  if (tools.length === 0) return null;
+  const groups = new Map<ToolKind, ToolView[]>();
+  for (const k of KIND_ORDER) groups.set(k, []);
+  for (const t of tools) {
+    if (!groups.has(t.kind)) groups.set(t.kind, []);
+    groups.get(t.kind)!.push(t);
+  }
+  return (
+    <div className="space-y-6">
+      {[...groups.entries()].filter(([, v]) => v.length > 0).map(([k, v]) => (
+        <section key={k}>
+          <header className="flex items-center gap-2 mb-2">
+            <h2 className="text-sm font-semibold text-ink-100">{KIND_LABEL[k]}</h2>
+            <span className="text-xs text-ink-300">({v.length})</span>
+          </header>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {v.map((t) => (
+              <ToolCard
+                key={t.id}
+                tool={t}
+                selected={t.id === selectedId}
+                onClick={() => onSelect(t.id)}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

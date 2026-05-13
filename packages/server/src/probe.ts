@@ -1,5 +1,7 @@
 import { allTools } from './catalog.js';
+import { dirSize, installRoot } from './lib/disk.js';
 import { currentPlatform, firstLine, pick, run, which } from './lib/platform.js';
+import { getMetrics } from './metrics.js';
 import type { Platform, ToolDef, ToolStatus } from './types.js';
 
 const CACHE_TTL_MS = 15_000;
@@ -79,6 +81,24 @@ export async function probeOne(tool: ToolDef, force = false): Promise<ToolStatus
     const proc = await probeProcess(tool, platform);
     status.running = proc.running;
     status.pid = proc.pid;
+
+    // Disk usage (cached internally for 5 min) — skip the very expensive trees.
+    try {
+      const root = installRoot(path);
+      // Don't measure system roots — they'd take forever and aren't meaningful.
+      const lower = root.toLowerCase();
+      if (lower !== 'c:\\windows\\system32' && lower !== 'c:\\windows' && lower !== '/usr/bin' && lower !== '/bin') {
+        const d = await dirSize(root);
+        status.diskBytes = d.bytes;
+        status.diskCapped = d.capped;
+      }
+    } catch { /* ignore */ }
+
+    // Live metrics when running.
+    if (status.running && status.pid) {
+      const m = await getMetrics(status.pid);
+      if (m) status.metrics = m;
+    }
   } catch (err) {
     status.probeError = err instanceof Error ? err.message : String(err);
   }
@@ -89,7 +109,6 @@ export async function probeOne(tool: ToolDef, force = false): Promise<ToolStatus
 
 export async function probeAll(force = false): Promise<ToolStatus[]> {
   const results: ToolStatus[] = [];
-  // Parallel but cap concurrency to avoid overwhelming the host.
   const queue = [...allTools()];
   const CONCURRENCY = 6;
   const workers: Promise<void>[] = [];

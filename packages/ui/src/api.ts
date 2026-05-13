@@ -1,4 +1,4 @@
-import type { ActionId, ActionResult, Platform, ServerSettings, ToolView } from './types';
+import type { ActionId, ActionResult, DoctorReport, Platform, ServerSettings, ToolView } from './types';
 
 async function jget<T>(url: string): Promise<T> {
   const r = await fetch(url);
@@ -35,4 +35,5 @@ export const api = {
     jsend<ServerSettings>(`/api/settings/custom-tools`, 'POST', { tool }),
   removeCustomTool: (id: string) =>
     jsend<ServerSettings>(`/api/settings/custom-tools/${encodeURIComponent(id)}`, 'DELETE'),
+  doctor: () => jget<DoctorReport>(`/api/system/doctor`),
 };

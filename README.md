@@ -1,6 +1,6 @@
 # ToolDeck
 
-> **v0.2.0** — Universal dashboard for viewing and managing the AI / dev
+> **v0.3.0** — Universal dashboard for viewing and managing the AI / dev
 > / automation tools installed on a PC. Runs as a local web app — clone
 > on any Windows, macOS, or Linux box, `pnpm start`, and open the browser.
 
@@ -8,14 +8,19 @@ Features:
 
 - 46-tool curated catalog covering runtimes, package managers, AI CLIs,
   dev / cloud CLIs, services, and utilities
-- Cross-platform probe (Windows / macOS / Linux) for version + running
-  state without per-platform config
+- Cross-platform probe (Windows / macOS / Linux) for version, running
+  state, disk size, and live CPU / memory / uptime
+- **Three view modes** — grid · list (table with metrics columns) ·
+  grouped (cards partitioned by kind)
 - **Command palette** (`⌘K`) — fuzzy search; compound commands like
-  `start docker`, `update node`
+  `start docker`, `update node`, `uninstall ngrok`
 - **Settings** (`⌘,`) — light / dark theme, comfy / compact density,
   auto-refresh polling, hide tools, add custom tools
-- **System actions** per tool — start, stop, restart, kill, check
-  update, update, open docs, reveal location
+- **System actions** per tool — start · stop · restart · kill · check
+  update · update · **uninstall** · **repair** · open docs · reveal
+  location. Uninstall + repair go through a confirmation modal.
+- **Fix system** doctor (`D`) — Node / pnpm / Git / Docker / memory /
+  disk free / package-manager checks with copy-pastable fix hints
 - Theme-aware via CSS variables; everything tints automatically
 
 ```

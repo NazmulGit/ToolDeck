@@ -10,6 +10,14 @@ export type ToolKind =
   | 'app'
   | 'util';
 
+export interface ToolMetrics {
+  cpu: number;
+  memoryBytes: number;
+  uptimeMs: number;
+  startedAt?: number;
+  pid: number;
+}
+
 export interface ToolStatus {
   id: string;
   installed: boolean;
@@ -17,6 +25,9 @@ export interface ToolStatus {
   version?: string;
   running?: boolean;
   pid?: number;
+  diskBytes?: number;
+  diskCapped?: boolean;
+  metrics?: ToolMetrics;
   updateAvailable?: boolean;
   latestVersion?: string;
   lastProbedAt: number;
@@ -47,8 +58,23 @@ export type ActionId =
   | 'kill'
   | 'update'
   | 'check-update'
+  | 'uninstall'
+  | 'repair'
   | 'open-docs'
   | 'open-location';
+
+export type DoctorCheckStatus = 'ok' | 'warn' | 'fail';
+export interface DoctorCheck {
+  id: string;
+  label: string;
+  status: DoctorCheckStatus;
+  message: string;
+  fixHint?: string;
+}
+export interface DoctorReport {
+  checks: DoctorCheck[];
+  summary: { ok: number; warn: number; fail: number };
+}
 
 export interface ServerSettings {
   hiddenIds: string[];

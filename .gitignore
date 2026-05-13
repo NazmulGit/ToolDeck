@@ -4,3 +4,5 @@ dist/
 .tooldeck/
 *.log
 .DS_Store
+**/*.tsbuildinfo
+**/.vite/
