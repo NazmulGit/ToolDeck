@@ -3,6 +3,17 @@ import { useEffect, useState } from 'react';
 export type Theme = 'dark' | 'light';
 export type Density = 'comfy' | 'compact';
 export type ViewMode = 'grid' | 'list' | 'group';
+export type SortKey =
+  | 'name'
+  | 'description'
+  | 'kind'
+  | 'version'
+  | 'disk'
+  | 'cpu'
+  | 'memory'
+  | 'uptime'
+  | 'status';
+export type SortDir = 'asc' | 'desc' | null;
 
 export interface UISettings {
   theme: Theme;
@@ -14,6 +25,8 @@ export interface UISettings {
   kindFilter: string;
   statusFilter: string;
   selectedId: string | null;
+  sortKey: SortKey;
+  sortDir: SortDir;
 }
 
 const STORAGE_KEY = 'tooldeck.ui.v1';
@@ -28,6 +41,8 @@ export const DEFAULT_SETTINGS: UISettings = {
   kindFilter: 'all',
   statusFilter: 'all',
   selectedId: null,
+  sortKey: 'name',
+  sortDir: null,
 };
 
 export function loadSettings(): UISettings {

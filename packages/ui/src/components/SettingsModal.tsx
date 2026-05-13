@@ -87,7 +87,7 @@ export function SettingsModal({ uiSettings, onUISettings, serverSettings, tools,
                   Universal dashboard for viewing and managing the AI / dev /
                   automation tools installed on a PC.
                 </p>
-                <Field label="Version">v0.3.0</Field>
+                <Field label="Version">v0.3.1</Field>
                 <Field label="Server">http://127.0.0.1:4317</Field>
                 <Field label="UI">http://127.0.0.1:4316</Field>
                 <Field label="Shortcuts">
@@ -97,6 +97,7 @@ export function SettingsModal({ uiSettings, onUISettings, serverSettings, tools,
                     <div><span className="kbd">/</span> focus search</div>
                     <div><span className="kbd">R</span> refresh</div>
                     <div><span className="kbd">D</span> system doctor</div>
+                    <div><span className="kbd">↑↓</span> navigate tools</div>
                     <div><span className="kbd">Esc</span> close modals</div>
                   </div>
                 </Field>
