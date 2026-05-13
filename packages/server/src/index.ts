@@ -14,6 +14,7 @@ import {
   saveSettings,
   setHidden,
 } from './settings.js';
+import { hasBundle, staticHandler } from './static.js';
 import type { ActionId, ToolDef } from './types.js';
 
 const PORT = Number(process.env.PORT) || 4317;
@@ -130,8 +131,15 @@ app.delete('/api/settings/custom-tools/:id', (req, res) => {
   res.json(removeCustomTool(req.params.id));
 });
 
+// Serve the embedded UI when present (compiled .exe). In dev, the bundle is
+// empty and this no-ops — Vite proxies /api to here from :4316.
+app.use(staticHandler());
+
 app.listen(PORT, HOST, () => {
   console.log(`[tooldeck-server] http://${HOST}:${PORT}`);
   console.log(`[tooldeck-server] platform=${currentPlatform()} tools=${allTools().length}`);
   console.log(`[tooldeck-server] config=${CONFIG_PATH}`);
+  if (hasBundle()) {
+    console.log(`[tooldeck-server] embedded UI active — open http://${HOST}:${PORT}/`);
+  }
 });

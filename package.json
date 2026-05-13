@@ -10,7 +10,8 @@
     "ui:dev": "pnpm --filter @tooldeck/ui dev",
     "ui:build": "pnpm --filter @tooldeck/ui build",
     "server:dev": "pnpm --filter @tooldeck/server dev",
-    "server:build": "pnpm --filter @tooldeck/server build"
+    "server:build": "pnpm --filter @tooldeck/server build",
+    "exe": "node ./scripts/build-exe.mjs"
   },
   "engines": {
     "node": ">=20.0.0",

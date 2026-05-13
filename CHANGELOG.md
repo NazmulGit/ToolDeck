@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.3.1 + portable exe — 2026-05-13
+
+- **Single-file `tooldeck.exe` build.** New `pnpm exe` script builds the
+  UI, embeds every asset as base64 into `packages/server/src/generated/ui-bundle.ts`,
+  then runs `bun build --compile` to produce a ~114 MB self-contained
+  Windows binary at `dist-exe/tooldeck.exe`. The .exe includes a
+  custom-icon resource via `--windows-icon`.
+- **Asset middleware in the server.** `staticHandler()` serves the
+  embedded UI bundle whenever it's non-empty. In dev the bundle is
+  empty and Vite still owns the UI on :4316 — same source, two
+  deployment shapes.
+- New entry point `packages/server/src/bun-entry.ts`. Boots the regular
+  server then opens the system browser. Honours `TOOLDECK_NO_OPEN=1`
+  for headless / smoke-test runs.
+
 ## v0.3.1 — 2026-05-13
 
 UX upgrade pass for the list view + dashboard.
