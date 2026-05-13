@@ -187,6 +187,102 @@ async function doUpdate(tool: ToolDef, platform: Platform): Promise<ActionResult
   };
 }
 
+async function doUninstall(tool: ToolDef, platform: Platform): Promise<ActionResult> {
+  if (!tool.update) {
+    return fail(tool.id, 'uninstall', new Error('no package manager known for this tool — uninstall manually'));
+  }
+  const u = tool.update;
+  let cmd: string | null = null;
+  switch (u.via) {
+    case 'winget':
+      if (u.pkgId) cmd = `winget uninstall --id ${u.pkgId} --silent --disable-interactivity --accept-source-agreements`;
+      break;
+    case 'choco':
+      if (u.pkgId) cmd = `choco uninstall ${u.pkgId} -y`;
+      break;
+    case 'brew':
+      if (u.pkgId) cmd = `brew uninstall ${u.pkgId}`;
+      break;
+    case 'apt':
+      if (u.pkgId) cmd = `sudo apt-get remove -y ${u.pkgId}`;
+      break;
+    case 'npm-g':
+      if (u.pkgId) cmd = `npm uninstall -g ${u.pkgId}`;
+      break;
+    case 'pip':
+      if (u.pkgId) cmd = `pip uninstall -y ${u.pkgId}`;
+      break;
+    case 'uv-tool':
+      if (u.pkgId) cmd = `uv tool uninstall ${u.pkgId}`;
+      break;
+    case 'pipx':
+      if (u.pkgId) cmd = `pipx uninstall ${u.pkgId}`;
+      break;
+    case 'self':
+      return fail(tool.id, 'uninstall', new Error('self-managed tool — uninstall manually'));
+  }
+  if (!cmd) return fail(tool.id, 'uninstall', new Error('no uninstall command available'));
+  const r = await run(cmd, { timeoutMs: 5 * 60_000 });
+  clearProbeCache(tool.id);
+  return {
+    ok: r.ok,
+    action: 'uninstall',
+    toolId: tool.id,
+    message: r.ok ? 'uninstall completed' : `uninstall failed (exit ${r.code})`,
+    stdout: cleanOutput(r.stdout),
+    stderr: cleanOutput(r.stderr),
+  };
+}
+
+async function doRepair(tool: ToolDef, platform: Platform): Promise<ActionResult> {
+  if (!tool.update) {
+    return fail(tool.id, 'repair', new Error('no package manager known for this tool — repair manually'));
+  }
+  const u = tool.update;
+  // Strategy: force a reinstall of the current version through the same package
+  // manager. winget has no first-class repair; --force re-acquires the package.
+  let cmd: string | null = null;
+  switch (u.via) {
+    case 'winget':
+      if (u.pkgId) cmd = `winget install --id ${u.pkgId} --silent --force --disable-interactivity --accept-package-agreements --accept-source-agreements`;
+      break;
+    case 'choco':
+      if (u.pkgId) cmd = `choco install ${u.pkgId} -y --force`;
+      break;
+    case 'brew':
+      if (u.pkgId) cmd = `brew reinstall ${u.pkgId}`;
+      break;
+    case 'apt':
+      if (u.pkgId) cmd = `sudo apt-get install --reinstall -y ${u.pkgId}`;
+      break;
+    case 'npm-g':
+      if (u.pkgId) cmd = `npm install -g ${u.pkgId}@latest`;
+      break;
+    case 'pip':
+      if (u.pkgId) cmd = `pip install --force-reinstall ${u.pkgId}`;
+      break;
+    case 'uv-tool':
+      if (u.pkgId) cmd = `uv tool install --force ${u.pkgId}`;
+      break;
+    case 'pipx':
+      if (u.pkgId) cmd = `pipx reinstall ${u.pkgId}`;
+      break;
+    case 'self':
+      return fail(tool.id, 'repair', new Error('self-managed tool — repair manually'));
+  }
+  if (!cmd) return fail(tool.id, 'repair', new Error('no repair command available'));
+  const r = await run(cmd, { timeoutMs: 10 * 60_000 });
+  clearProbeCache(tool.id);
+  return {
+    ok: r.ok,
+    action: 'repair',
+    toolId: tool.id,
+    message: r.ok ? 'repair completed' : `repair failed (exit ${r.code})`,
+    stdout: cleanOutput(r.stdout),
+    stderr: cleanOutput(r.stderr),
+  };
+}
+
 function ok(toolId: string, action: ActionId, message: string, stdout?: string, stderr?: string): ActionResult {
   return { ok: true, action, toolId, message, stdout, stderr };
 }
@@ -220,6 +316,10 @@ export async function performAction(toolId: string, action: ActionId): Promise<A
       return checkUpdate(tool, platform);
     case 'update':
       return doUpdate(tool, platform);
+    case 'uninstall':
+      return doUninstall(tool, platform);
+    case 'repair':
+      return doRepair(tool, platform);
     case 'open-docs': {
       const url = tool.docsUrl || tool.homeUrl;
       if (!url) return fail(tool.id, action, new Error('no docs URL'));

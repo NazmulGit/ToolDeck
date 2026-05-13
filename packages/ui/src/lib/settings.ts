@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 
 export type Theme = 'dark' | 'light';
 export type Density = 'comfy' | 'compact';
+export type ViewMode = 'grid' | 'list' | 'group';
 
 export interface UISettings {
   theme: Theme;
   density: Density;
+  viewMode: ViewMode;
   autoRefreshSec: number;       // 0 = off
   showMissing: boolean;
   search: string;
@@ -19,6 +21,7 @@ const STORAGE_KEY = 'tooldeck.ui.v1';
 export const DEFAULT_SETTINGS: UISettings = {
   theme: 'dark',
   density: 'comfy',
+  viewMode: 'grid',
   autoRefreshSec: 0,
   showMissing: true,
   search: '',

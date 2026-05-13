@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { api } from '../api';
+import { fmtBytes, fmtCpu, fmtMs } from '../lib/format';
 import type { ActionId, ActionResult, ToolView } from '../types';
 import { ActionButton } from './ActionButton';
+import { ConfirmModal } from './ConfirmModal';
 import { KindBadge } from './KindBadge';
 import { StatusDot } from './StatusDot';
 
@@ -20,9 +22,26 @@ const SYSTEM_ACTIONS: { id: ActionId; label: string; danger?: boolean }[] = [
   { id: 'update', label: 'Update' },
 ];
 
+const DESTRUCTIVE_ACTIONS: { id: ActionId; label: string; confirmTitle: string; confirmMessage: (n: string) => string; danger?: boolean }[] = [
+  {
+    id: 'repair',
+    label: 'Repair',
+    confirmTitle: 'Reinstall to repair',
+    confirmMessage: (n) => `This will run a forced reinstall of "${n}" through its package manager. Existing configuration is preserved by most managers.`,
+  },
+  {
+    id: 'uninstall',
+    label: 'Uninstall',
+    danger: true,
+    confirmTitle: 'Uninstall this tool',
+    confirmMessage: (n) => `This will remove "${n}" from this machine via its package manager. You can reinstall later from the same source.`,
+  },
+];
+
 export function DetailPanel({ tool, onChanged, onHide }: Props) {
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, setPending] = useState<ActionId | null>(null);
+  const [confirmAction, setConfirmAction] = useState<typeof DESTRUCTIVE_ACTIONS[number] | null>(null);
 
   if (!tool) {
     return (
@@ -38,8 +57,7 @@ export function DetailPanel({ tool, onChanged, onHide }: Props) {
       setResult(null);
       const r = await api.action(tool.id, action);
       setResult(r);
-      if (['start', 'stop', 'restart', 'kill', 'update'].includes(action)) {
-        // Refresh probes after any state-changing action.
+      if (['start', 'stop', 'restart', 'kill', 'update', 'uninstall', 'repair'].includes(action)) {
         setTimeout(onChanged, 800);
       }
     } catch (e) {
@@ -71,7 +89,7 @@ export function DetailPanel({ tool, onChanged, onHide }: Props) {
         <Row label="View">{tool.name}</Row>
         <Row label="Show">
           {status.installed ? (
-            <span className="text-accent-good">installed</span>
+            <span className="text-good">installed</span>
           ) : (
             <span className="text-ink-300">not installed</span>
           )}
@@ -104,6 +122,17 @@ export function DetailPanel({ tool, onChanged, onHide }: Props) {
             </div>
           </Row>
         ) : null}
+      </Section>
+
+      <Section title="Metrics">
+        <div className="grid grid-cols-3 gap-2">
+          <Metric label="Disk" value={fmtBytes(status.diskBytes, status.diskCapped)} />
+          <Metric label="CPU" value={status.metrics ? fmtCpu(status.metrics.cpu) : '—'} accent={!!status.metrics} />
+          <Metric label="Memory" value={status.metrics ? fmtBytes(status.metrics.memoryBytes) : '—'} accent={!!status.metrics} />
+          <Metric label="Uptime" value={status.metrics ? fmtMs(status.metrics.uptimeMs) : '—'} accent={!!status.metrics} />
+          <Metric label="PID" value={status.pid ? String(status.pid) : '—'} />
+          <Metric label="Last probe" value={fmtMs(Date.now() - status.lastProbedAt) + ' ago'} />
+        </div>
       </Section>
 
       <Section title="System">
@@ -145,6 +174,25 @@ export function DetailPanel({ tool, onChanged, onHide }: Props) {
             {tool.update.pkgId && <> · <span className="font-mono">{tool.update.pkgId}</span></>}
           </div>
         )}
+      </Section>
+
+      <Section title="Maintenance">
+        <p className="text-[11px] text-ink-300 mb-1">
+          Destructive actions. Both run via the configured package manager and
+          ask for confirmation.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {DESTRUCTIVE_ACTIONS.map((a) => (
+            <ActionButton
+              key={a.id}
+              label={a.label}
+              danger={a.danger}
+              pending={pending === a.id}
+              disabled={pending !== null || !status.installed || !tool.update}
+              onClick={() => setConfirmAction(a)}
+            />
+          ))}
+        </div>
         {onHide && (
           <div className="pt-2">
             <button
@@ -159,6 +207,17 @@ export function DetailPanel({ tool, onChanged, onHide }: Props) {
       </Section>
 
       {result && <ResultPanel result={result} />}
+
+      {confirmAction && (
+        <ConfirmModal
+          title={confirmAction.confirmTitle}
+          message={confirmAction.confirmMessage(tool.name)}
+          confirmLabel={confirmAction.label}
+          danger={confirmAction.danger}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { const a = confirmAction.id; setConfirmAction(null); run(a); }}
+        />
+      )}
     </div>
   );
 }
@@ -181,12 +240,21 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+function Metric({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="rounded-md border border-line bg-ink-700/30 px-2.5 py-1.5">
+      <div className="text-[10px] uppercase tracking-wider text-ink-300">{label}</div>
+      <div className={`font-mono text-sm ${accent ? 'text-good' : 'text-ink-100'}`}>{value}</div>
+    </div>
+  );
+}
+
 function ResultPanel({ result }: { result: ActionResult }) {
-  const accent = result.ok ? 'border-accent-good/40' : 'border-accent-bad/40';
+  const accent = result.ok ? 'border-good/40' : 'border-bad/40';
   return (
     <div className={`rounded-md border ${accent} bg-ink-900/40 p-3 text-xs space-y-2`}>
       <div className="flex items-center gap-2">
-        <span className={result.ok ? 'text-accent-good' : 'text-accent-bad'}>
+        <span className={result.ok ? 'text-good' : 'text-bad'}>
           {result.ok ? '✓' : '✕'}
         </span>
         <span className="font-medium">{result.action}</span>
@@ -198,7 +266,7 @@ function ResultPanel({ result }: { result: ActionResult }) {
         </pre>
       )}
       {result.stderr && (
-        <pre className="font-mono text-[11px] text-accent-warm whitespace-pre-wrap max-h-40 overflow-auto scroll-thin">
+        <pre className="font-mono text-[11px] text-warm whitespace-pre-wrap max-h-40 overflow-auto scroll-thin">
 {result.stderr}
         </pre>
       )}

@@ -2,7 +2,9 @@ import cors from 'cors';
 import express from 'express';
 import { performAction } from './actions.js';
 import { allTools, findTool } from './catalog.js';
+import { runDoctor } from './doctor.js';
 import { currentPlatform } from './lib/platform.js';
+import { getMetrics } from './metrics.js';
 import { clearProbeCache, probeAll, probeOne } from './probe.js';
 import {
   addCustomTool,
@@ -55,6 +57,8 @@ const VALID_ACTIONS: ActionId[] = [
   'kill',
   'update',
   'check-update',
+  'uninstall',
+  'repair',
   'open-docs',
   'open-location',
 ];
@@ -66,6 +70,29 @@ app.post('/api/tools/:id/action', async (req, res) => {
   }
   const result = await performAction(req.params.id, action);
   res.json(result);
+});
+
+app.get('/api/tools/:id/metrics', async (req, res) => {
+  const t = findTool(req.params.id);
+  if (!t) return res.status(404).json({ error: 'not found' });
+  const status = await probeOne(t);
+  if (!status.running || !status.pid) {
+    return res.json({ running: false });
+  }
+  const m = await getMetrics(status.pid);
+  res.json({ running: true, pid: status.pid, metrics: m });
+});
+
+// System-level doctor — runs cheap health checks across the host.
+app.get('/api/system/doctor', async (_req, res) => {
+  res.json(await runDoctor());
+});
+
+app.post('/api/system/fix', async (_req, res) => {
+  // Today fix-system just runs the doctor and returns its findings. The UI
+  // surfaces fix hints so the user can copy the command. We deliberately do
+  // not auto-run system-changing commands here.
+  res.json(await runDoctor());
 });
 
 // ── Settings endpoints ────────────────────────────────────────────────────

@@ -52,6 +52,14 @@ export interface ToolDef {
   tags?: string[];
 }
 
+export interface ToolMetrics {
+  cpu: number;             // percent (0..100*cores)
+  memoryBytes: number;
+  uptimeMs: number;
+  startedAt?: number;
+  pid: number;
+}
+
 export interface ToolStatus {
   id: string;
   installed: boolean;
@@ -59,6 +67,9 @@ export interface ToolStatus {
   version?: string;
   running?: boolean;
   pid?: number;
+  diskBytes?: number;      // size of binary's parent folder, capped scan
+  diskCapped?: boolean;    // true if the scan stopped at limits
+  metrics?: ToolMetrics;
   updateAvailable?: boolean;
   latestVersion?: string;
   lastProbedAt: number;
@@ -76,6 +87,8 @@ export type ActionId =
   | 'kill'
   | 'update'
   | 'check-update'
+  | 'uninstall'
+  | 'repair'
   | 'open-docs'
   | 'open-location';
 
