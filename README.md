@@ -1,4 +1,19 @@
-# ToolDeck
+# ToolDeckPran (ToolDeck) — Dashboard for the AI & Dev Tools Installed on Your PC
+
+**ToolDeckPran** is a universal local dashboard that discovers, monitors and manages the AI, dev and automation tools installed on a PC:
+runtimes, package managers, AI CLIs, cloud CLIs, services and utilities. It runs as a local web app (pnpm monorepo, UI `:4316`, API `:4317`)
+on Windows, macOS or Linux, and ships as a single-file `tooldeck.exe` (Bun compile) plus a Windows installer.
+
+- **46-tool curated catalog** with version, running state, disk size and live CPU/memory per tool.
+- **Grid, list and grouped views**, sortable columns, keyboard navigation, command palette (`Ctrl/Cmd+K`).
+- **System actions:** start, stop, restart, kill, check update, update, uninstall, repair (with confirmation).
+- **Fix system doctor** for Node, pnpm, Git, Docker, memory, disk and package managers, with copy-paste fix hints.
+- **Current version:** v0.3.1 · see Releases for the exe and installer zips
+
+> Status: private repository.
+
+---
+
 
 > **v0.3.0** — Universal dashboard for viewing and managing the AI / dev
 > / automation tools installed on a PC. Runs as a local web app — clone
@@ -145,3 +160,8 @@ force a re-probe.
   noise before being returned to the UI.
 - The catalog is curated, not auto-discovered. Adding a tool is one
   ~10-line object in `catalog.ts`.
+
+---
+
+## Keywords
+tool manager dashboard, ai cli manager, dev tools dashboard, windows tool installer, pnpm monorepo, system doctor, command palette, bun compile exe
