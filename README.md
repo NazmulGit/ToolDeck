@@ -165,3 +165,7 @@ force a re-probe.
 
 ## Keywords
 tool manager dashboard, ai cli manager, dev tools dashboard, windows tool installer, pnpm monorepo, system doctor, command palette, bun compile exe
+
+## License
+
+MIT. See [LICENSE](LICENSE).

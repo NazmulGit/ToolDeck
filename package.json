@@ -2,6 +2,7 @@
   "name": "tooldeck",
   "version": "0.3.1",
   "private": true,
+  "license": "MIT",
   "description": "Universal dashboard for viewing and managing installed dev / AI / automation tools and CLIs.",
   "scripts": {
     "start": "pnpm -r --parallel run dev",
