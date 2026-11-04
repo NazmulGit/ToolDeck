@@ -7,3 +7,6 @@ dist-exe/
 .DS_Store
 **/*.tsbuildinfo
 **/.vite/
+
+# Windows shortcuts embed machine name, MAC and local paths
+*.lnk
