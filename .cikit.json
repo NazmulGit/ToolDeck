@@ -1,0 +1,51 @@
+{
+  "repo": "NazmulGit/ToolDeck",
+  "env": {},
+  "version": {
+    "file": "VERSION",
+    "cargo_toml": "Cargo.toml",
+    "changelog": "CHANGELOG.md",
+    "required": false
+  },
+  "ci": [
+    {
+      "name": "pnpm-install",
+      "cmd": [
+        "pnpm",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "timeout_min": 20
+    },
+    {
+      "name": "pnpm-typecheck",
+      "cmd": [
+        "pnpm",
+        "run",
+        "typecheck"
+      ],
+      "timeout_min": 30
+    },
+    {
+      "name": "pnpm-build",
+      "cmd": [
+        "pnpm",
+        "run",
+        "build"
+      ],
+      "timeout_min": 30
+    },
+    {
+      "name": "check",
+      "cmd": [
+        "python",
+        "-I",
+        "D:\\Code_Dev\\Scripts\\CI-Kit\\cikit.py",
+        "--repo",
+        ".",
+        "check"
+      ],
+      "timeout_min": 15
+    }
+  ]
+}
